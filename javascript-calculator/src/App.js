@@ -26,6 +26,10 @@ function App() {
     if(expression.length > 0){
       //check to make sure a number doesn't have leading zeros
       if(/0/.test(symbol)){
+        //if directly before this zero was a symbol add the zero,
+        //otherwise check to make sure this zero preceeded by another digit
+        //or a decimal point
+        if(!/[/*+-]/.test(expression[expression.length-1])){
         for(let i = expression.length-1; i >= 0; i--){
           if(/[1-9\.]/.test(expression[i])){
             break;  
@@ -34,6 +38,7 @@ function App() {
           }
         }
       }
+    }
       //if the previous symbol and the current symbol (except minus) are both operators, replace the previous one with the new one
       if(/[/*+]/.test(symbol) && /[/*+-]/.test(expression[expression.length-1])){
         setExpression(expression.slice(0, -1)); 
@@ -57,19 +62,7 @@ function App() {
         return;
       }
     } 
-    //if the expression is too many digits let the user know and ignore their input
-    if(expression.length+1 > 11){
-      let tmpExp = expression;
-      setExpression("max digits");
-      setTimeout(function(){
-        setExpression(tmpExp);
-        //if the last thing entered was an operator, remove it so the calculator looks cleaner
-        if(/[/*+-]/.test(expression[expression.length-1])){
-          setExpression(expression.slice(0, -1));
-        }
-      }, 1000);
-      return;
-    }
+    //after running through all the checks, finally set the expression
     setExpression(previous => previous + symbol);
     //after pressing '=' upon entering the next keypress clear the display so that it only shows the newest total
     if(expression[expression.length-1] === '='){ 
@@ -83,11 +76,17 @@ function App() {
   
   const calculate = () => {
     let answer = eval(expression);
-    //if answer is too long
     answer = String(answer);
-    console.log(answer.length + 'answer length');
     if(answer.length + 1 > 11){
-      setExpression("max digits");
+      //if there's a decimal, remove the extra digits after the decimal point
+      if(answer.includes('.')){
+        answer = answer.slice(0, 10);
+        setExpression(answer);
+      }
+      //otherwise it's a non-decimal number and we want to not show it because that would be innacurate
+      else{
+        setExpression("max digits");
+      }
       return;
     }
     setExpression(answer);
@@ -97,7 +96,9 @@ function App() {
     <div className="container">
       <div className="calculator">
         <div>
-          <div id="display">{expression}</div>
+          <div className="outer-div">
+            <div id="display">{expression}</div>
+          </div>
         </div>
         <Buttons initialize={initialize} display={display} calculate={calculate} />
       </div>
